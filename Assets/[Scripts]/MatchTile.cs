@@ -31,24 +31,23 @@ public class MatchTile : MonoBehaviour
     GameObject selectionSprite;
     SpriteRenderer render;
 
-    MatchTile previousSelected = null;
     bool isSelected = false;
 
     [SerializeField]
-    public MatchTile[] neighbours;
+    public List<MatchTile> neighbours;
 
     private void Awake()
     {
         selectionSprite = transform.GetChild(0).gameObject;
         render = GetComponent<SpriteRenderer>();
         tileSize = render.bounds.size;
-        neighbours = new MatchTile[4];
+        //neighbours = new List<MatchTile>(4);
     }
     private void Select()
     {
         isSelected = true;
         selectionSprite.SetActive(true);
-        previousSelected = gameObject.GetComponent<MatchTile>();
+        BoardManager.instance.previousSelected = this;
         //SFXManager.instance.PlaySFX(Clip.Select);
     }
     
@@ -56,7 +55,7 @@ public class MatchTile : MonoBehaviour
     {
         isSelected = false;
         selectionSprite.SetActive(false);
-        previousSelected = null;
+        BoardManager.instance.previousSelected = null;
     }
 
     private void OnMouseDown()
@@ -69,12 +68,13 @@ public class MatchTile : MonoBehaviour
             Deselect();
         } else 
         {
-            if (previousSelected == null)
+            if (BoardManager.instance.previousSelected == null)
             {
                 Select();
             } else
             {
-                previousSelected.Deselect();
+                BoardManager.instance.SwapTile(this);
+                BoardManager.instance.previousSelected.Deselect();
             }
         }
         Debug.Log(gameObject.name);
@@ -86,8 +86,13 @@ public class MatchTile : MonoBehaviour
         tile.neighbours[(int)GetOppositeNeighbour(direction)] = this;
     }
 
-    public TileNeighbourDirections GetOppositeNeighbour(TileNeighbourDirections direction)
+    public MatchTile GetNeighbour(TileNeighbourDirections direction)
     {
-        return (int)direction < 2 ? (direction + 2) : (direction - 2);
+        return neighbours[(int)direction];
+    }
+
+    public static TileNeighbourDirections GetOppositeNeighbour(TileNeighbourDirections direction)
+    {
+        return ((int)direction < 2 ? (direction + 2) : (direction - 2));
     }
 }

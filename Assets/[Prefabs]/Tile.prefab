@@ -99,6 +99,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   coordinates: {x: 0, y: 0}
   type: 0
+  neighbours:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
 --- !u!61 &8419145752100059209
 BoxCollider2D:
   m_ObjectHideFlags: 0
