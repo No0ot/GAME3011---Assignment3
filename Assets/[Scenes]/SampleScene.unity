@@ -329,16 +329,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0418b14f26aa3964ba6f93947df14a84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tilePrefabs:
-  - {fileID: 7747535887017752763, guid: 2a1ecef0b8a814f409160bd7159763d8, type: 3}
-  - {fileID: 7747535887017752763, guid: 442572a1d3d201c48911d78ef3766e6e, type: 3}
-  - {fileID: 7747535887017752763, guid: c783bb58ecedaa24da8cd6a39233c165, type: 3}
-  - {fileID: 7747535887017752763, guid: 984651da384377e4b8c35d286e959ce2, type: 3}
-  - {fileID: 7747535887017752763, guid: aa3c0766878a3e0478958b89c669b4de, type: 3}
-  - {fileID: 7747535887017752763, guid: 4c5075b09271f414fb50371a2938203c, type: 3}
+  tilePrefab: {fileID: 1338112662942543398, guid: 13ec130fd1a085544a27b8747989b5e3, type: 3}
   gridSize: {x: 10, y: 20}
-  tileList: []
   isShifting: 0
+  previousSelected: {fileID: 0}
 --- !u!4 &1350578404
 Transform:
   m_ObjectHideFlags: 0

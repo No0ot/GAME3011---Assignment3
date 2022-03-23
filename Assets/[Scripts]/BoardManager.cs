@@ -5,12 +5,12 @@ using UnityEngine;
 public class BoardManager : MonoBehaviour
 {
     public static BoardManager instance;
-    public MatchTile[] tilePrefabs;
+    public MatchTile tilePrefab;
     public Vector2Int gridSize;
 
     Vector2 startPosition = new Vector2(-2.7f, -4.2f);
 
-    public List<MatchTile> tileList = new List<MatchTile>();
+    public MatchTile[,] board; 
 
     MatchTile[] previousLeft;
     MatchTile previousBelow;
@@ -22,7 +22,22 @@ public class BoardManager : MonoBehaviour
     void Start()
     {
         instance = this;
+        board = new MatchTile[gridSize.x, gridSize.y];
         CreateBoard();
+    }
+
+    private void Update()
+    {
+        if(!isShifting)
+        {
+            for (int x = 0; x < gridSize.x; x++)
+            {
+                for (int y = 0; y < gridSize.y; y++)
+                {
+                    board[x, y].VerifyTile();
+                }
+            }
+        }
     }
 
     private void CreateBoard()
@@ -42,14 +57,17 @@ public class BoardManager : MonoBehaviour
 
     void CreateTile(int x, int y, int i)
     {
-        List<MatchTile> possibleTiles = new List<MatchTile>();
-        possibleTiles.AddRange(tilePrefabs);
+        List<int> possibleTiles = new List<int>();
+        for(int j = 0; j < (int)TileType.NUM_TYPES; j++)
+        {
+            possibleTiles.Add(j);
+        }
 
-        foreach (MatchTile tile in possibleTiles)
+        foreach (int tile in possibleTiles)
         {
             if (previousLeft[y])
             {
-                if (tile.type == previousLeft[y].type)
+                if (tile == (int)previousLeft[y].type)
                 {
                     possibleTiles.Remove(tile);
                     break;
@@ -57,11 +75,11 @@ public class BoardManager : MonoBehaviour
             }
         }
 
-        foreach (MatchTile tile in possibleTiles)
+        foreach (int tile in possibleTiles)
         {
             if (previousBelow)
             {
-                if (tile.type == previousBelow.type)
+                if (tile == (int)previousBelow.type)
                 {
                     possibleTiles.Remove(tile);
                     break;
@@ -69,125 +87,115 @@ public class BoardManager : MonoBehaviour
             }
         }
 
-        MatchTile newTile = Instantiate(possibleTiles[Random.Range(0, possibleTiles.Count)], new Vector3(startPosition.x + (MatchTile.tileSize.x * x),
-                                                                                                         startPosition.y + (MatchTile.tileSize.y * y),
-                                                                                                         0),
-                                                                                                         tilePrefabs[0].transform.rotation
-                                                                                                         );
+        MatchTile newTile = Instantiate(tilePrefab, new Vector3(startPosition.x + (MatchTile.tileSize.x * x),
+                                                                startPosition.y + (MatchTile.tileSize.y * y),
+                                                                0), tilePrefab.transform.rotation );
 
+        newTile.type = (TileType)possibleTiles[Random.Range(0, possibleTiles.Count)];
         newTile.coordinates = new Vector2Int(x, y);
         newTile.transform.parent = transform;
-        tileList.Add(newTile);
+        newTile.UpdateTile();
+        board[x, y] = newTile;
+
 
         previousLeft[y] = newTile;
         previousBelow = newTile;
-
-        if (x > 0)
-        {
-            newTile.SetNeighbour(TileNeighbourDirections.LEFT, tileList[i - (int)gridSize.y]);
-        }
-        if (y > 0)
-        {
-            newTile.SetNeighbour(TileNeighbourDirections.DOWN, tileList[i - 1]);
-        }
     }
 
     public void SwapTile(MatchTile endTile)
     {
         MatchTile startTile = previousSelected;
-        //Debug.Log("swap" + startTile.coordinates + " " + endTile.coordinates);
-        Vector2Int coordinatesBuffer = startTile.coordinates;
-        startTile.coordinates = endTile.coordinates;
-        endTile.coordinates = coordinatesBuffer;
+        TileType temptype = endTile.type;
+        endTile.type = startTile.type;
+        startTile.type = temptype;
 
-        tileList.Remove(startTile);
-        tileList.Remove(endTile);
-        int startIndex = GetIndexFromCoordinates(startTile.coordinates);
-        int endIndex = GetIndexFromCoordinates(endTile.coordinates);
-        if (startIndex < endIndex)
-        {
-            tileList.Insert(GetIndexFromCoordinates(startTile.coordinates), startTile);
-            tileList.Insert(GetIndexFromCoordinates(endTile.coordinates), endTile);
-        }
-        else
-        {
-            tileList.Insert(GetIndexFromCoordinates(endTile.coordinates), endTile);
-            tileList.Insert(GetIndexFromCoordinates(startTile.coordinates), startTile);
-        }
-
-        GetNewNeighbours(startTile);
-        GetNewNeighbours(endTile);
-
-        for (int i = 0; i < startTile.neighbours.Count; i++)
-        {
-            if (startTile.neighbours[i] != null)
-            {
-                if(startTile.neighbours[i].neighbours[(int)MatchTile.GetOppositeNeighbour((TileNeighbourDirections)i)] != startTile)
-                    startTile.neighbours[i].neighbours[(int)MatchTile.GetOppositeNeighbour((TileNeighbourDirections)i)] = startTile;
-        
-                Debug.Log(startTile.neighbours[i].neighbours[(int)MatchTile.GetOppositeNeighbour((TileNeighbourDirections)i)].coordinates);
-            }
-        }
-        
-        for (int i = 0; i < endTile.neighbours.Count; i++)
-        {
-            if (endTile.neighbours[i] != null)
-            {
-                endTile.neighbours[i].neighbours[(int)MatchTile.GetOppositeNeighbour((TileNeighbourDirections)i)] = endTile;
-                Debug.Log(endTile.neighbours[i].neighbours[(int)MatchTile.GetOppositeNeighbour((TileNeighbourDirections)i)].coordinates);
-            }
-        }
-
-
-        VisuallySwapTile(startTile, endTile);
-    }
-
-    public void VisuallySwapTile(MatchTile startTile, MatchTile endTile)
-    {
-        //Debug.Log("Visually Swap" + startTile.coordinates + " " + endTile.coordinates);
-        Vector3 positionBuffer = startTile.transform.position;
-
-        startTile.transform.position = endTile.transform.position;
-        endTile.transform.position = positionBuffer;
+        startTile.UpdateTile();
+        endTile.UpdateTile();
     }
 
     public MatchTile GetTileFromCoordinates(Vector2Int coord)
     {
-        int iX = coord.x;
-        int iY = coord.y;
-        int index = iY + iX * gridSize.y;
-        if (index >= 0)
-            return tileList[index];
+        if ((coord.x >= 0 && coord.y >= 0) && (coord.x < gridSize.x && coord.y < gridSize.y))
+            return board[coord.x, coord.y];
         else
             return null;
     }
-    public int GetIndexFromCoordinates(Vector2Int coord)
+
+    public IEnumerator FindClearedTiles()
     {
-        int iX = coord.x;
-        int iY = coord.y;
-        int index = iY + iX * gridSize.y;
-        Debug.Log(index);
-        return index;
+        for (int x = 0; x < gridSize.x; x++)
+        {
+            for (int y = 0; y < gridSize.y; y++)
+            {
+                if (board[x, y].type == TileType.NONE)
+                {
+                    yield return StartCoroutine(ShiftTilesDown(x, y));
+                    break;
+                }
+            }
+        }
+
+        for (int x = 0; x < gridSize.x; x++)
+        {
+            for (int y = 0; y < gridSize.y; y++)
+            {
+                board[x, y].ClearAllMatches();
+            }
+        }
+        
     }
 
-    void GetNewNeighbours(MatchTile startTile)
+    private IEnumerator ShiftTilesDown(int x, int yStart, float shiftDelay = 0.02f)
     {
-        Vector2Int[] directions =
-        {
-            new Vector2Int(startTile.coordinates.x, startTile.coordinates.y + 1),
-            new Vector2Int(startTile.coordinates.x - 1, startTile.coordinates.y),
-            new Vector2Int(startTile.coordinates.x, startTile.coordinates.y - 1),
-            new Vector2Int(startTile.coordinates.x + 1, startTile.coordinates.y)
-        };
+        isShifting = true;
+        List<MatchTile> tiles = new List<MatchTile>();
+        int nullCount = 0;
 
-        for(int i = 0; i < directions.Length; i++)
-        {
-            if (GetTileFromCoordinates(directions[i]))
-            {
-                startTile.neighbours[i] = GetTileFromCoordinates(directions[i]);
+        for (int y = yStart; y < gridSize.y; y++)
+        {  
+            MatchTile tile = board[x, y];
+            if (tile.type == TileType.NONE)
+            { 
+                nullCount++;
             }
-            else
-                startTile.neighbours[i] = null;
+            tiles.Add(tile);
         }
+
+        for (int i = 0; i < nullCount; i++)
+        { 
+            yield return new WaitForSeconds(shiftDelay);
+            for (int k = 0; k < tiles.Count - 1; k++)
+            { 
+                tiles[k].type = tiles[k + 1].type;
+                tiles[k + 1].type = GetNewTile(x, gridSize.y - 1);
+                tiles[k].UpdateTile();
+                tiles[k + 1].UpdateTile();
+            }
+        }
+        isShifting = false;
+    }
+
+    private TileType GetNewTile(int x, int y)
+    {
+        List<int> possibleTiles = new List<int>();
+        for (int j = 0; j < (int)TileType.NUM_TYPES; j++)
+        {
+            possibleTiles.Add(j);
+        }
+
+        if (x > 0)
+        {
+            possibleTiles.Remove((int)board[x - 1, y].type);
+        }
+        if (x < gridSize.x - 1)
+        {
+            possibleTiles.Remove((int)board[x + 1, y].type);
+        }
+        if (y > 0)
+        {
+            possibleTiles.Remove((int)board[x, y - 1].type);
+        }
+
+        return (TileType)possibleTiles[Random.Range(0, possibleTiles.Count)];
     }
 }
