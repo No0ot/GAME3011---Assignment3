@@ -4,14 +4,26 @@ using UnityEngine;
 
 public enum TileType
 {
-    NONE = -1,
-    BLUE,
-    RED,
-    GREEN,
+    NONE,
     YELLOW,
     PINK,
+    RED,
+    GREEN,
+    BLUE,
+    ORANGE,
     PURPLE,
     NUM_TYPES
+}
+
+public enum TileFace
+{
+    NONE,
+    CROSS,
+    CIRCLE,
+    SQUARE,
+    TEAR,
+    STAR,
+    NUM_FACES
 }
 
 public class MatchTile : MonoBehaviour
@@ -20,6 +32,7 @@ public class MatchTile : MonoBehaviour
 
     public Vector2Int coordinates;
     public TileType type;
+    public TileFace face = TileFace.NONE;
 
     GameObject selectionSprite;
     SpriteRenderer render;
@@ -27,9 +40,15 @@ public class MatchTile : MonoBehaviour
     bool isSelected = false;
     bool matchFound = false;
 
+    List<MatchTile> matchingTileTypes = new List<MatchTile>();
+    List<MatchTile> matchingTileFaces = new List<MatchTile>();
+
     Vector2Int[] adjacentDirections = { Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left };
 
     Sprite sprite;
+
+    TileType matchingType;
+    TileFace matchingFace;
 
     private void Awake()
     {
@@ -92,54 +111,16 @@ public class MatchTile : MonoBehaviour
 
     public void UpdateTile()
     {
-        switch(type)
-        {
-            case TileType.NONE:
-                render.sprite = null;
-                break;
-            case TileType.BLUE:
-                render.color = Color.blue;
-                break;
-            case TileType.RED:
-                render.color = Color.red;
-                break;
-            case TileType.GREEN:
-                render.color = Color.green;
-                break;
-            case TileType.YELLOW:
-                render.color = Color.yellow;
-                break;
-            case TileType.PINK:
-                render.color = Color.cyan;
-                break;
-            case TileType.PURPLE:
-                render.color = Color.magenta;
-                break;
-        }
-        if(type != TileType.NONE && render.sprite == null)
-        {
-            render.sprite = sprite;
-        }
+        render.sprite = TileManager.instance.GetSprite((int)type, (int)face);
     }
 
     public void VerifyTile()
     {
-       if(type == TileType.NONE)
-       {
-           if (render.color == Color.blue)
-               type = TileType.BLUE;
-           if (render.color == Color.red)
-               type = TileType.RED;
-           if (render.color == Color.green)
-               type = TileType.GREEN;
-           if (render.color == Color.yellow)
-               type = TileType.YELLOW;
-           if (render.color == Color.cyan)
-               type = TileType.PINK;
-           if (render.color == Color.magenta)
-               type = TileType.PURPLE;
-       }
-        UpdateTile();
+        //if(type == TileType.NONE && face == TileFace.NONE)
+        //{
+        //    //StopCoroutine(BoardManager.instance.FindClearedTiles());
+        //    StartCoroutine(BoardManager.instance.FindClearedTiles());
+        //}
     }
 
     public MatchTile GetAdjacent(Vector2Int direction)
@@ -165,30 +146,50 @@ public class MatchTile : MonoBehaviour
 
     List<MatchTile> FindMatch(Vector2Int direction)
     {
-        List<MatchTile> matchingTiles = new List<MatchTile>();
+        matchingTileTypes.Clear();
+        matchingTileFaces.Clear();
         MatchTile currentTile = GetAdjacent(direction);
 
-        while (currentTile != null && currentTile.type == type)
+        if (currentTile != null) 
         {
-            matchingTiles.Add(currentTile);
-            currentTile = currentTile.GetAdjacent(direction);
+            if (currentTile.type == type)
+            {
+                while (currentTile != null && currentTile.type == type)
+                {
+                    matchingTileTypes.Add(currentTile);
+                    currentTile = currentTile.GetAdjacent(direction);
+                }
+            }
+            else if (currentTile.face == face)
+            {
+                while (currentTile != null && currentTile.face == face)
+                {
+                    matchingTileFaces.Add(currentTile);
+                    currentTile = currentTile.GetAdjacent(direction);
+                }
+            }
         }
-        return matchingTiles;
+        if (matchingTileFaces.Count < matchingTileTypes.Count)
+            return matchingTileTypes;
+        else
+            return matchingTileFaces;
     }
 
     void ClearMatch(Vector2Int[] paths)
     {
-        List<MatchTile> matchingTiles = new List<MatchTile>();
+        List<MatchTile> matchingTilesT = new List<MatchTile>();
+        List<MatchTile> matchingTilesF = new List<MatchTile>();
         for (int i = 0; i < paths.Length; i++) 
         {
-            matchingTiles.AddRange(FindMatch(paths[i]));
+            matchingTilesT.AddRange(FindMatch(paths[i]));
         }
-        if (matchingTiles.Count >= 2)
+        if (matchingTilesT.Count >= 2)
         {
-            for (int i = 0; i < matchingTiles.Count; i++) 
+            for (int i = 0; i < matchingTilesT.Count; i++) 
             {
-                matchingTiles[i].type = TileType.NONE;
-                matchingTiles[i].UpdateTile();
+                matchingTilesT[i].type = TileType.NONE;
+                matchingTilesT[i].face = TileFace.NONE;
+                matchingTilesT[i].UpdateTile();
 
             }
             matchFound = true; 
@@ -196,7 +197,7 @@ public class MatchTile : MonoBehaviour
     }
     public void ClearAllMatches()
     {
-        if (type == TileType.NONE)
+        if (type == TileType.NONE || face == TileFace.NONE)
             return;
 
         ClearMatch(new Vector2Int[2] { Vector2Int.left, Vector2Int.right });
@@ -204,9 +205,10 @@ public class MatchTile : MonoBehaviour
         if (matchFound)
         {
             type = TileType.NONE;
+            face = TileFace.NONE;
             UpdateTile();
             matchFound = false;
-            StopCoroutine(BoardManager.instance.FindClearedTiles());
+            //StoCoroutine(BoardManager.instance.FindClearedTiles());
             StartCoroutine(BoardManager.instance.FindClearedTiles());
         }
     }
