@@ -29,16 +29,16 @@ public class BoardManager : MonoBehaviour
 
     private void Update()
     {
-        if(!isShifting)
-        {
-            for (int x = 0; x < gridSize.x; x++)
-            {
-                for (int y = 0; y < gridSize.y; y++)
-                {
-                    board[x, y].VerifyTile();
-                }
-            }
-        }
+        //if(!isShifting)
+        //{
+        //    for (int x = 0; x < gridSize.x; x++)
+        //    {
+        //        for (int y = 0; y < gridSize.y; y++)
+        //        {
+        //            board[x, y].VerifyTile();
+        //        }
+        //    }
+        //}
     }
 
     private void CreateBoard()

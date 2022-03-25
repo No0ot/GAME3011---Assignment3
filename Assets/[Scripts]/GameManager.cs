@@ -13,7 +13,7 @@ public enum Difficulty
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
-    UIManager uiManager;
+    public UIManager uiManager;
 
     public Difficulty difficulty = Difficulty.EASY;
 
@@ -24,23 +24,50 @@ public class GameManager : MonoBehaviour
 
     float timer;
     public float maxTime;
+
+    public bool isGameOver = false;
     // Start is called before the first frame update
     void Start()
     {
         instance = this;
         uiManager = GetComponent<UIManager>();
+        transform.parent.gameObject.SetActive(false);
+    }
+
+    private void OnEnable()
+    {
         timer = maxTime;
+        score = 0;
+        isGameOver = false;
+        uiManager.losePanel.SetActive(false);
+        uiManager.winPanel.SetActive(false);
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        float val = (float)score / (float)goalAmount;
-        uiManager.UpdateGoalBar(val);
-        uiManager.UpdateScoreText(score);
-        uiManager.UpdateTimerText((int)timer);
-        if(timer > 0)
-            timer -= Time.deltaTime;
+        if (!isGameOver)
+        {
+            float val = (float)score / (float)goalAmount;
+            uiManager.UpdateGoalBar(val);
+            uiManager.UpdateScoreText(score);
+            uiManager.UpdateTimerText((int)timer);
+
+            if (val >= 1)
+            {
+                uiManager.WinGame();
+                isGameOver = true;
+            }
+            if (timer > 0)
+                timer -= Time.deltaTime;
+            else
+            {
+                uiManager.LoseGame();
+                isGameOver = true;
+            }
+        }
+            
     }
 
     public void IncrementScore(int addedscore)

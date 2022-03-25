@@ -10,6 +10,13 @@ public class UIManager : MonoBehaviour
     public TMP_Text score;
     public Slider bar;
 
+    public Popup popupPrefab;
+
+    public Canvas canvas;
+
+    public GameObject losePanel;
+    public GameObject winPanel;
+
     public void UpdateGoalBar(float val)
     {
         bar.value = val;
@@ -35,4 +42,23 @@ public class UIManager : MonoBehaviour
         score.text = "Score: " + newScore;
     }
 
+
+    public void SpawnPopup(int type, int face, int amount)
+    {
+        Popup newPopup = Instantiate(popupPrefab, canvas.transform);
+        newPopup.type = type;
+        newPopup.face = face;
+        newPopup.amount = amount;
+        newPopup.UpdateReferences();
+    }
+
+    public void LoseGame()
+    {
+        losePanel.SetActive(true);
+    }
+
+    public void WinGame()
+    {
+        winPanel.SetActive(true);
+    }
 }

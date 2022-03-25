@@ -45,8 +45,6 @@ public class MatchTile : MonoBehaviour
 
     Vector2Int[] adjacentDirections = { Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left };
 
-    Sprite sprite;
-
     TileType matchingType;
     TileFace matchingFace;
 
@@ -55,7 +53,6 @@ public class MatchTile : MonoBehaviour
         selectionSprite = transform.GetChild(0).gameObject;
         render = GetComponent<SpriteRenderer>();
         tileSize = render.bounds.size;
-        sprite = render.sprite;
     }
     private void Select()
     {
@@ -79,7 +76,7 @@ public class MatchTile : MonoBehaviour
 
     private void OnMouseDown()
     {
-        if (render.sprite == null || BoardManager.instance.isShifting)
+        if (render.sprite == null || BoardManager.instance.isShifting || GameManager.instance.isGameOver)
             return;
 
         if (isSelected)
@@ -148,11 +145,13 @@ public class MatchTile : MonoBehaviour
     {
         matchingTileTypes.Clear();
         matchingTileFaces.Clear();
+        matchingType = TileType.NONE;
+        matchingFace = TileFace.NONE;
         MatchTile currentTile = GetAdjacent(direction);
 
         if (currentTile != null) 
         {
-            if (currentTile.type == type)
+            if (currentTile.type == type && currentTile.type != TileType.NONE)
             {
                 while (currentTile != null && currentTile.type == type)
                 {
@@ -160,7 +159,7 @@ public class MatchTile : MonoBehaviour
                     currentTile = currentTile.GetAdjacent(direction);
                 }
             }
-            else if (currentTile.face == face)
+            else if (currentTile.face == face && currentTile.face != TileFace.NONE)
             {
                 while (currentTile != null && currentTile.face == face)
                 {
@@ -169,10 +168,19 @@ public class MatchTile : MonoBehaviour
                 }
             }
         }
+
         if (matchingTileFaces.Count < matchingTileTypes.Count)
+        {
+            if(matchingTileTypes.Count > 0)
+                matchingType = matchingTileTypes[0].type;
             return matchingTileTypes;
+        }
         else
+        {
+            if(matchingTileFaces.Count > 0)
+                matchingFace = matchingTileFaces[0].face;
             return matchingTileFaces;
+        }
     }
 
     void ClearMatch(Vector2Int[] paths)
@@ -181,7 +189,16 @@ public class MatchTile : MonoBehaviour
         List<MatchTile> matchingTilesF = new List<MatchTile>();
         for (int i = 0; i < paths.Length; i++) 
         {
-            matchingTilesT.AddRange(FindMatch(paths[i]));
+            List<MatchTile> newList = new List<MatchTile>();
+            newList.AddRange(FindMatch(paths[i]));
+
+            foreach(MatchTile tile in newList)
+            {
+                if(!matchingTilesT.Contains(tile))
+                {
+                     matchingTilesT.Add(tile);
+                }
+            }
         }
         if (matchingTilesT.Count >= 2)
         {
@@ -192,6 +209,8 @@ public class MatchTile : MonoBehaviour
                 matchingTilesT[i].UpdateTile();
 
             }
+            Debug.Log((int)matchingType + " " + (int)matchingFace);
+            GameManager.instance.uiManager.SpawnPopup((int)matchingType, (int)matchingFace, matchingTilesT.Count + 1);
             matchFound = true; 
         }
     }
