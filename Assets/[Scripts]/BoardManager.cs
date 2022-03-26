@@ -6,8 +6,8 @@ public class BoardManager : MonoBehaviour
 {
     public static BoardManager instance;
     public MatchTile tilePrefab;
-    public Vector2Int gridSize;
-
+    Vector2Int gridSize;
+    public Vector2Int initialSize;
     Vector2 startPosition = new Vector2(-4.5f, -4f);
 
     public MatchTile[,] board; 
@@ -25,8 +25,19 @@ public class BoardManager : MonoBehaviour
     void Start()
     {
         instance = this;
-        board = new MatchTile[gridSize.x, gridSize.y];
+    }
+
+    private void OnEnable()
+    {
+        gridSize = new Vector2Int(initialSize.x + (int)GameManager.instance.difficulty, initialSize.y);
+        board = new MatchTile[gridSize.x, gridSize.y];  
         CreateBoard();
+        isShifting = false;
+    }
+
+    private void OnDisable()
+    {
+        ClearBoard();
     }
 
     private void Update()
@@ -130,6 +141,7 @@ public class BoardManager : MonoBehaviour
         startTile.face = tempface;
 
         SFXManager.instance.PlayClip(swap);
+        GameManager.instance.IncrementScore(-100);
 
         startTile.UpdateTile();
         endTile.UpdateTile();
@@ -158,14 +170,18 @@ public class BoardManager : MonoBehaviour
             }
         }
 
+        int comboCounter = 0;
         for (int x = 0; x < gridSize.x; x++)
         {
             for (int y = 0; y < gridSize.y; y++)
             {
-                board[x, y].ClearAllMatches();
+                if(board[x, y].ClearAllMatches())
+                {
+                    comboCounter += 1;
+                }
             }
         }
-        
+        GameManager.instance.IncrementScore(comboCounter * 50);
     }
 
     private IEnumerator ShiftTilesDown(int x, int yStart, float shiftDelay = 0.05f)
@@ -193,6 +209,7 @@ public class BoardManager : MonoBehaviour
                 tiles[0].face = (TileFace)newType.y;
 
                 tiles[0].UpdateTile();
+                tiles[0].clear = false;
             }
             else
             { 
@@ -209,6 +226,8 @@ public class BoardManager : MonoBehaviour
 
                     tiles[k].UpdateTile();
                     tiles[k + 1].UpdateTile();
+                    tiles[k].clear = false;
+                    tiles[k + 1].clear = false;
                 }
             }
         }
@@ -268,5 +287,16 @@ public class BoardManager : MonoBehaviour
         }
 
         return possibleTiles[Random.Range(0, possibleTiles.Count)];
+    }
+
+    void ClearBoard()
+    {
+        for (int x = 0; x < gridSize.x; x++)
+        {
+            for (int y = 0; y < gridSize.y; y++)
+            {
+                Destroy(board[x, y].gameObject);
+            }
+        }
     }
 }

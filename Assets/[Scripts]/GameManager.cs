@@ -30,7 +30,7 @@ public class GameManager : MonoBehaviour
     float scoreDecrementTimer = 0.0f;
     float scoreTimerMax = 0.1f;
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         instance = this;
         uiManager = GetComponent<UIManager>();
@@ -79,13 +79,22 @@ public class GameManager : MonoBehaviour
             else
             {
                 scoreDecrementTimer = scoreTimerMax;
-                IncrementScore(-10);
+                IncrementScore(-5);
             }
         }
     }
 
     public void IncrementScore(int addedscore)
     {
+        
         score += addedscore;
+        score = Mathf.Clamp(score, 0, int.MaxValue);
+        //if (score < 0)
+        //    score = 0;
+    }
+
+    public void SetDifficulty(int diff)
+    {
+        difficulty = (Difficulty)diff;
     }
 }

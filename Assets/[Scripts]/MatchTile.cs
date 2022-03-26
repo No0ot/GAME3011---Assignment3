@@ -92,9 +92,14 @@ public class MatchTile : MonoBehaviour
                 if (GetAllAdjacentTiles().Contains(BoardManager.instance.previousSelected))
                 {
                     BoardManager.instance.SwapTile(this);
-                    BoardManager.instance.previousSelected.ClearAllMatches();
-                    BoardManager.instance.previousSelected.Deselect();
-                    ClearAllMatches();
+                    if (!BoardManager.instance.previousSelected.ClearAllMatches() && !ClearAllMatches())
+                    {
+                        StartCoroutine(SwapBack());
+                    }
+                    else
+                        BoardManager.instance.previousSelected.Deselect();
+
+
                 }
                 else
                 {
@@ -246,5 +251,13 @@ public class MatchTile : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    public IEnumerator SwapBack()
+    {
+        yield return new WaitForSeconds(0.1f);
+        BoardManager.instance.SwapTile(this);
+        BoardManager.instance.previousSelected.Deselect();
+        GameManager.instance.IncrementScore(-1000);
     }
 }
