@@ -26,6 +26,9 @@ public class GameManager : MonoBehaviour
     public float maxTime;
 
     public bool isGameOver = false;
+
+    float scoreDecrementTimer = 0.0f;
+    float scoreTimerMax = 0.1f;
     // Start is called before the first frame update
     void Start()
     {
@@ -41,6 +44,7 @@ public class GameManager : MonoBehaviour
         isGameOver = false;
         uiManager.losePanel.SetActive(false);
         uiManager.winPanel.SetActive(false);
+        scoreDecrementTimer = scoreTimerMax;
 
     }
 
@@ -67,7 +71,17 @@ public class GameManager : MonoBehaviour
                 isGameOver = true;
             }
         }
-            
+
+        if (!BoardManager.instance.isShifting)
+        {
+            if (scoreDecrementTimer > 0)
+                scoreDecrementTimer -= Time.deltaTime;
+            else
+            {
+                scoreDecrementTimer = scoreTimerMax;
+                IncrementScore(-10);
+            }
+        }
     }
 
     public void IncrementScore(int addedscore)

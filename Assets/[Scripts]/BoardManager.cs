@@ -19,6 +19,8 @@ public class BoardManager : MonoBehaviour
     public bool isShifting = false;
     public MatchTile previousSelected = null;
 
+    public AudioClip swap;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -29,16 +31,10 @@ public class BoardManager : MonoBehaviour
 
     private void Update()
     {
-        //if(!isShifting)
-        //{
-        //    for (int x = 0; x < gridSize.x; x++)
-        //    {
-        //        for (int y = 0; y < gridSize.y; y++)
-        //        {
-        //            board[x, y].VerifyTile();
-        //        }
-        //    }
-        //}
+        if(GameManager.instance.isGameOver)
+        {
+            StopAllCoroutines();
+        }
     }
 
     private void CreateBoard()
@@ -133,6 +129,8 @@ public class BoardManager : MonoBehaviour
         startTile.type = temptype;
         startTile.face = tempface;
 
+        SFXManager.instance.PlayClip(swap);
+
         startTile.UpdateTile();
         endTile.UpdateTile();
     }
@@ -151,8 +149,9 @@ public class BoardManager : MonoBehaviour
         {
             for (int y = 0; y < gridSize.y; y++)
             {
-                if (board[x, y].type == TileType.NONE && board[x, y].face == TileFace.NONE)
+                if (board[x, y].clear)
                 {
+                    yield return new WaitWhile(() => isShifting);
                     yield return StartCoroutine(ShiftTilesDown(x, y));
                     break;
                 }
@@ -187,18 +186,30 @@ public class BoardManager : MonoBehaviour
 
         for (int i = 0; i < nullCount; i++)
         {
-            GameManager.instance.IncrementScore(50);
-            yield return new WaitForSeconds(shiftDelay);
-            for (int k = 0; k < tiles.Count - 1; k++)
-            { 
-                tiles[k].type = tiles[k + 1].type;
-                tiles[k].face = tiles[k + 1].face;
+            if(tiles.Count == 1)
+            {
                 Vector2Int newType = GetNewTile(x, gridSize.y - 1);
-                tiles[k + 1].type = (TileType)newType.x;
-                tiles[k + 1].face = (TileFace)newType.y;
+                tiles[0].type = (TileType)newType.x;
+                tiles[0].face = (TileFace)newType.y;
 
-                tiles[k].UpdateTile();
-                tiles[k + 1].UpdateTile();
+                tiles[0].UpdateTile();
+            }
+            else
+            { 
+                yield return new WaitForSeconds(shiftDelay);
+                for (int k = 0; k < tiles.Count - 1; k++)
+                {
+                    if (tiles[k + 1].type != TileType.NONE)
+                        tiles[k].type = tiles[k + 1].type;
+                    if (tiles[k + 1].face != TileFace.NONE)
+                        tiles[k].face = tiles[k + 1].face;
+                    Vector2Int newType = GetNewTile(x, gridSize.y - 1);
+                    tiles[k + 1].type = (TileType)newType.x;
+                    tiles[k + 1].face = (TileFace)newType.y;
+
+                    tiles[k].UpdateTile();
+                    tiles[k + 1].UpdateTile();
+                }
             }
         }
         isShifting = false;
